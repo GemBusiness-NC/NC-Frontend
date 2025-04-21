@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { ShoppingCart, Search, Filter, ChevronDown, Star } from 'lucide-react';
+import { ShoppingCart, Search, Filter, ChevronDown, AlertCircle, CheckCircle, Info, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Shop = () => {
   const [gems, setGems] = useState([]);
@@ -11,6 +12,9 @@ const Shop = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name');
   const [cartOpen, setCartOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [toast, setToast] = useState({ visible: false, message: '', type: '' });
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchGems = async () => {
@@ -28,11 +32,28 @@ const Shop = () => {
     };
 
     fetchGems();
+    
+    // Check if the user is logged in (based on token or other mechanism)
+    const token = localStorage.getItem('token');
+    setIsLoggedIn(!!token);
   }, []);
 
+  // Show toast notification
+  const showToast = (message, type = 'info') => {
+    setToast({ visible: true, message, type });
+    // Auto-hide the toast after 3 seconds
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, visible: false }));
+    }, 3000);
+  };
+
   const addToCart = (gem) => {
+    if (!isLoggedIn) {
+      showToast('Please log in to add items to your cart', 'error');
+      return;
+    }
+    
     setCart([...cart, { ...gem, quantity: 1 }]);
-    // Show cart briefly when item is added
     setCartOpen(true);
     setTimeout(() => setCartOpen(false), 3000);
   };
@@ -46,7 +67,7 @@ const Shop = () => {
     .sort((a, b) => {
       if (sortBy === 'price-low') return a.price - b.price;
       if (sortBy === 'price-high') return b.price - a.price;
-      return a.name.localeCompare(b.name); // default sort by name
+      return a.name.localeCompare(b.name);
     });
 
   const cartTotal = cart.reduce((total, item) => total + item.price, 0).toFixed(2);
@@ -75,6 +96,27 @@ const Shop = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
+      {/* Red Toast notification */}
+      {toast.visible && (
+        <div className="fixed top-4 right-4 z-50 animate-fade-in-down">
+          <div className="flex items-center p-4 rounded-md shadow-lg max-w-xs md:max-w-md bg-white text-red-800 border-l-4 border-red-500">
+            <div className="flex-shrink-0 mr-3">
+              <AlertCircle className="text-red-500" size={20} />
+            </div>
+            <div className="flex-1 ml-1 mr-2">
+              <p className="text-sm font-medium">{toast.message}</p>
+            </div>
+            <button
+              type="button"
+              className="flex-shrink-0 ml-auto text-red-400 hover:text-red-600 focus:outline-none"
+              onClick={() => setToast(prev => ({ ...prev, visible: false }))}
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header with search and filters */}
       <div className="sticky top-0 z-10">
         <div className="flex flex-col md:flex-row justify-between items-center p-4 gap-4 mt-20">
@@ -212,11 +254,11 @@ const Shop = () => {
               
               <div className="p-4">
                 <h2 className="text-xl font-semibold text-black-800">{gem.name}</h2>
-                <div className="flex justify-between items-center mt-1">
-                  <p className="text-l font-semibold text-black-700">Price :${gem.price}</p>
-                  <button 
+                <div className="mt-2 flex justify-between items-center text-blue-600">
+                  <span className="text-lg font-bold">${gem.price}</span>
+                  <button
                     onClick={() => addToCart(gem)}
-                    className="bg-blue-600 text-white px-2 py-1 text-sm rounded hover:bg-blue-700 transition-colors"
+                    className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
                   >
                     Add to Cart
                   </button>
@@ -229,5 +271,25 @@ const Shop = () => {
     </div>
   );
 };
+
+// Add animation keyframes in your CSS
+const style = document.createElement('style');
+style.textContent = `
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -20px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-fade-in-down {
+  animation: fadeInDown 0.3s ease-out forwards;
+}
+`;
+document.head.appendChild(style);
 
 export default Shop;

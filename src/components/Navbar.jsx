@@ -16,8 +16,12 @@ const Navbar = () => {
 
   const logout = async () => {
     try {
+      // Clear the token from localStorage
+      localStorage.removeItem('token');  // This removes the token
+  
       axios.defaults.withCredentials = true;
       const { data } = await axios.post(`${backendUrl}/api/auth/logout`);
+  
       if (data.success) {
         setIsLoggedin(false);
         setUserData(null);
@@ -30,6 +34,7 @@ const Navbar = () => {
       console.error(`Logout failed: ${error.response?.data?.message || error.message}`);
     }
   };
+  
   
 
   const sendVerificationOtp = async () => {
