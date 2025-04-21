@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect } from "react";
-// import { toast } from "react-toastify";
+//import { toast } from "react-toastify";
 import axios from "axios"; // Ensure axios is imported
 
 export const AppContent = createContext();
@@ -40,7 +40,7 @@ export const AppContextProvider = (props) => {
   };
 
   useEffect(() => {
-    // getAuthState();
+     //getAuthState();
   }, []);
 
   const value = {

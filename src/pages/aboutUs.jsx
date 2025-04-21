@@ -1,14 +1,14 @@
 import React from 'react';
 import Navbar from '../components/Navbar';
-import Profile from '../components/User/Profile';
+import AboutUs from '../components/User/aboutUs';
 
-const ProfilePage = () => {
+const AboutPage = () => {
   return (
     <div>
       <Navbar />
-      <Profile />
+      <AboutUs />
     </div>
   );
 };
 
-export default ProfilePage;
+export default AboutPage;

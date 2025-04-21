@@ -5,7 +5,7 @@ import HomePage from '../components/Home';
 const Home = () => {
   return (
     <div>
-      <Navbar />
+      <Navbar/>
       <HomePage />  
     </div>
   );

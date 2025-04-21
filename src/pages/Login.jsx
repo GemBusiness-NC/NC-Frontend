@@ -23,32 +23,35 @@ const Login = () => {
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     axios.defaults.withCredentials = true;
-
+  
     if (state === 'Sign Up' && password !== rePassword) {
       toast.error('Passwords do not match');
       return;
     }
-
+  
     try {
       if (state === 'Sign Up') {
         const { data } = await axios.post(backendUrl + `/api/auth/register`, { name, email, password });
-
+  
         if (data.success) {
           setIsLoggedin(true);
           getUserData();
           toast.success('Account created successfully!');
-          navigate('/');
+          navigate('/'); // Redirect to homepage after signup
         } else {
           toast.error(data.message);
         }
       } else {
         const { data } = await axios.post(backendUrl + `/api/auth/login`, { email, password });
-
+  
         if (data.success) {
           setIsLoggedin(true);
           getUserData();
           toast.success('Login successful!');
-          navigate('/');
+          
+          // Navigate based on the redirectTo value from the backend
+          const redirectTo = data.redirectTo || '/';  // Default to '/' if no redirectTo is provided
+          navigate(redirectTo);  // Navigate to either '/admin' or '/'
         } else {
           toast.error(data.message);
         }
@@ -58,6 +61,7 @@ const Login = () => {
       toast.error(errorMessage);
     }
   };
+  
 
   return (
   

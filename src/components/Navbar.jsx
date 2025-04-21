@@ -21,15 +21,16 @@ const Navbar = () => {
       if (data.success) {
         setIsLoggedin(false);
         setUserData(null);
-        toast.success('Logged out successfully');
+        console.log("Logged out successfully");
         navigate('/');
       } else {
-        toast.error('Logout failed. Please try again.');
+        console.error("Logout failed. Please try again.");
       }
     } catch (error) {
-      toast.error(`Logout failed: ${error.response?.data?.message || error.message}`);
+      console.error(`Logout failed: ${error.response?.data?.message || error.message}`);
     }
   };
+  
 
   const sendVerificationOtp = async () => {
     try {

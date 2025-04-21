@@ -1,14 +1,14 @@
 import React from 'react';
 import Navbar from '../components/Navbar';
-import Profile from '../components/User/Profile';
+import Shop from '../components/User/Shop';
 
-const ProfilePage = () => {
+const ShopPage = () => {
   return (
     <div>
       <Navbar />
-      <Profile />
+      <Shop />
     </div>
   );
 };
 
-export default ProfilePage;
+export default ShopPage;
