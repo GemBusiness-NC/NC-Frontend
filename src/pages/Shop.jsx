@@ -1,12 +1,12 @@
 import React from 'react';
-import Navbar from '../components/Navbar';
 import Shop from '../components/User/Shop';
+import Navbar from '../components/Navbar';
 
-const ShopPage = () => {
+const ShopPage = ({ addToCart, cart, setCart }) => {
   return (
     <div>
       <Navbar />
-      <Shop />
+      <Shop addToCart={addToCart} cart={cart} setCart={setCart} />
     </div>
   );
 };

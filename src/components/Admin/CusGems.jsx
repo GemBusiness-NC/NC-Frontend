@@ -12,8 +12,10 @@ const CusGem = () => {
   const [sortOption, setSortOption] = useState("latest");
   const [formData, setFormData] = useState({
     name: "",
+    color: "",
+    category: "",
     price: "",
-    carot: "",
+    carat: "",
     shortdes: "",
     des: "",
     image: null,
@@ -51,8 +53,10 @@ const CusGem = () => {
     setViewingGem(null);
     setFormData({
       name: gem.name,
+      color: gem.color || "", // Added color field
+      category: gem.category || "",
       price: gem.price,
-      carot: gem.carot,
+      carat: gem.carat || gem.carot || "", // Fixed spelling from carot to carat
       shortdes: gem.shortdes,
       des: gem.des,
       image: null,
@@ -85,9 +89,9 @@ const CusGem = () => {
     // First filter by category if not "All Categories"
     let result = gems;
     if (filterCategory !== "All Categories") {
-      // This filter doesn't work because your gem data doesn't have a category field
-      // You would need to add a category field to your gem data model
-      result = gems;
+      result = gems.filter(gem => 
+        gem.category && gem.category.toLowerCase() === filterCategory.toLowerCase()
+      );
     }
 
     // Then filter by search term
@@ -110,9 +114,13 @@ const CusGem = () => {
       case "name-az":
         return [...result].sort((a, b) => a.name.localeCompare(b.name));
       default: // latest
-        // This sort doesn't work because gems don't have a date field
-        // You would need to add a date field to your gem data model
-        return result;
+        // This sort assumes gems have a createdAt field
+        return [...result].sort((a, b) => {
+          if (a.createdAt && b.createdAt) {
+            return new Date(b.createdAt) - new Date(a.createdAt);
+          }
+          return 0;
+        });
     }
   };
 
@@ -219,7 +227,7 @@ const CusGem = () => {
                   />
                   <div className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-sm">
                     <div className="text-xs font-bold px-2 py-1 bg-blue-50 rounded-full text-blue-800">
-                      {gem.carot} ct
+                      {gem.carat || gem.carot} ct
                     </div>
                   </div>
                 </div>
@@ -328,7 +336,7 @@ const CusGem = () => {
                           Carats
                         </p>
                         <p className="text-2xl font-bold text-blue-700">
-                          {viewingGem.carot}
+                          {viewingGem.carat || viewingGem.carot}
                         </p>
                       </div>
                     </div>
@@ -354,13 +362,13 @@ const CusGem = () => {
                         <p className="text-xs font-medium text-gray-500 mb-1">
                           Category
                         </p>
-                        <p className="text-gray-900">Precious Gems</p>
+                        <p className="text-gray-900">{viewingGem.category || "Precious Gems"}</p>
                       </div>
                       <div className="bg-gray-50 p-3 rounded-lg">
                         <p className="text-xs font-medium text-gray-500 mb-1">
-                          Added On
+                          Color
                         </p>
-                        <p className="text-gray-900">April 15, 2025</p>
+                        <p className="text-gray-900">{viewingGem.color || "N/A"}</p>
                       </div>
                     </div>
                   </div>
@@ -449,12 +457,49 @@ const CusGem = () => {
                         type="number"
                         placeholder="Carats"
                         className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
-                        value={formData.carot}
+                        value={formData.carat}
                         onChange={(e) =>
-                          setFormData({ ...formData, carot: e.target.value })
+                          setFormData({ ...formData, carat: e.target.value })
                         }
                         required
                         step="0.01"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Category
+                      </label>
+                      <select 
+                        className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+                        value={formData.category}
+                        onChange={(e) =>
+                          setFormData({ ...formData, category: e.target.value })
+                        }
+                      >
+                        <option value="">Select Category</option>
+                        <option value="Diamond">Diamond</option>
+                        <option value="Ruby">Ruby</option>
+                        <option value="Sapphire">Sapphire</option>
+                        <option value="Emerald">Emerald</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Color
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Color"
+                        className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+                        value={formData.color}
+                        onChange={(e) =>
+                          setFormData({ ...formData, color: e.target.value })
+                        }
                       />
                     </div>
                   </div>
@@ -488,19 +533,6 @@ const CusGem = () => {
                       }
                       required
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Category
-                    </label>
-                    <select className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm">
-                      <option>Diamond</option>
-                      <option>Ruby</option>
-                      <option>Sapphire</option>
-                      <option>Emerald</option>
-                      <option>Other</option>
-                    </select>
                   </div>
 
                   <div>

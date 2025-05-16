@@ -1,19 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { ShoppingCart, Search, Filter, ChevronDown, AlertCircle, CheckCircle, Info, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ShoppingCart, Search, Filter, ChevronDown, AlertCircle, CheckCircle, Info, X } from 'lucide-react';
+import QuantitySelector from './QuantitySelector';
 
-const Shop = () => {
+const Shop = ({ addToCart, cart = [], setCart }) => {
   const [gems, setGems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [cart, setCart] = useState([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name');
   const [cartOpen, setCartOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [toast, setToast] = useState({ visible: false, message: '', type: '' });
+  const [showCheckout, setShowCheckout] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,19 +48,35 @@ const Shop = () => {
     }, 3000);
   };
 
-  const addToCart = (gem) => {
+  const handleAddToCart = (gem, quantity = 1) => {
     if (!isLoggedIn) {
       showToast('Please log in to add items to your cart', 'error');
       return;
     }
     
-    setCart([...cart, { ...gem, quantity: 1 }]);
+    addToCart(gem, quantity);
     setCartOpen(true);
+    showToast(`${gem.name} added to cart`, 'success');
     setTimeout(() => setCartOpen(false), 3000);
   };
 
   const removeFromCart = (gemId) => {
-    setCart(cart.filter(item => item._id !== gemId));
+    if (setCart && Array.isArray(cart)) {
+      setCart(cart.filter(item => item._id !== gemId));
+    }
+  };
+
+  const updateCartItemQuantity = (gemId, newQuantity) => {
+    if (newQuantity < 1 || !setCart || !Array.isArray(cart)) return;
+    
+    const updatedCart = cart.map(item => 
+      item._id === gemId ? { ...item, quantity: newQuantity } : item
+    );
+    setCart(updatedCart);
+  };
+
+  const handleCheckout = () => {
+    navigate('/checkout');
   };
 
   const filteredGems = gems
@@ -70,7 +87,9 @@ const Shop = () => {
       return a.name.localeCompare(b.name);
     });
 
-  const cartTotal = cart.reduce((total, item) => total + item.price, 0).toFixed(2);
+  const cartTotal = Array.isArray(cart) 
+    ? cart.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2)
+    : "0.00";
 
   if (loading) {
     return (
@@ -96,19 +115,33 @@ const Shop = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Red Toast notification */}
+      {/* Toast notification */}
       {toast.visible && (
         <div className="fixed top-4 right-4 z-50 animate-fade-in-down">
-          <div className="flex items-center p-4 rounded-md shadow-lg max-w-xs md:max-w-md bg-white text-red-800 border-l-4 border-red-500">
+          <div className={`flex items-center p-4 rounded-md shadow-lg max-w-xs md:max-w-md bg-white ${
+            toast.type === 'error' 
+              ? 'text-red-800 border-l-4 border-red-500' 
+              : toast.type === 'success'
+                ? 'text-green-800 border-l-4 border-green-500'
+                : 'text-blue-800 border-l-4 border-blue-500'
+          }`}>
             <div className="flex-shrink-0 mr-3">
-              <AlertCircle className="text-red-500" size={20} />
+              {toast.type === 'error' && <AlertCircle className="text-red-500" size={20} />}
+              {toast.type === 'success' && <CheckCircle className="text-green-500" size={20} />}
+              {toast.type === 'info' && <Info className="text-blue-500" size={20} />}
             </div>
             <div className="flex-1 ml-1 mr-2">
               <p className="text-sm font-medium">{toast.message}</p>
             </div>
             <button
               type="button"
-              className="flex-shrink-0 ml-auto text-red-400 hover:text-red-600 focus:outline-none"
+              className={`flex-shrink-0 ml-auto ${
+                toast.type === 'error' 
+                  ? 'text-red-400 hover:text-red-600' 
+                  : toast.type === 'success'
+                    ? 'text-green-400 hover:text-green-600'
+                    : 'text-blue-400 hover:text-blue-600'
+              } focus:outline-none`}
               onClick={() => setToast(prev => ({ ...prev, visible: false }))}
             >
               <X size={16} />
@@ -175,10 +208,10 @@ const Shop = () => {
                 className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
               >
                 <ShoppingCart size={18} className="mr-2" />
-                <span>{cart.length}</span>
+                <span>{Array.isArray(cart) ? cart.reduce((total, item) => total + item.quantity, 0) : 0}</span>
               </button>
               
-              {cartOpen && cart.length > 0 && (
+              {cartOpen && cart && Array.isArray(cart) && cart.length > 0 && (
                 <div className="absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg z-20">
                   <div className="p-4">
                     <h3 className="font-bold text-lg mb-2">Your Cart</h3>
@@ -193,15 +226,29 @@ const Shop = () => {
                                 className="w-10 h-10 object-cover rounded mr-2"
                               />
                             )}
-                            <span>{item.name}</span>
+                            <div className="flex flex-col">
+                              <span>{item.name}</span>
+                              <div className="flex items-center mt-1">
+                                <button 
+                                  onClick={() => updateCartItemQuantity(item._id, item.quantity - 1)}
+                                  className="text-xs px-1 bg-gray-200 rounded"
+                                  disabled={item.quantity <= 1}
+                                >-</button>
+                                <span className="mx-2 text-sm">{item.quantity}</span>
+                                <button 
+                                  onClick={() => updateCartItemQuantity(item._id, item.quantity + 1)}
+                                  className="text-xs px-1 bg-gray-200 rounded"
+                                >+</button>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex items-center">
-                            <span className="font-medium">${item.price}</span>
+                          <div className="flex flex-col items-end">
+                            <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
                             <button 
                               onClick={() => removeFromCart(item._id)}
-                              className="ml-2 text-red-500 hover:text-red-700"
+                              className="text-xs text-red-500 hover:text-red-700 mt-1"
                             >
-                              ✕
+                              Remove
                             </button>
                           </div>
                         </div>
@@ -212,7 +259,13 @@ const Shop = () => {
                         <span>Total:</span>
                         <span>${cartTotal}</span>
                       </div>
-                      <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+                      <button 
+                        className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+                        onClick={() => {
+                          setCartOpen(false);
+                          handleCheckout();
+                        }}
+                      >
                         Checkout
                       </button>
                     </div>
@@ -238,7 +291,10 @@ const Shop = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4">
           {filteredGems.map((gem) => (
             <div key={gem._id} className="bg-white shadow-md rounded-lg overflow-hidden transition-all duration-300 hover:shadow-xl border border-blue-100">
-              <div className="relative">
+              <div 
+                className="relative cursor-pointer"
+                onClick={() => navigate(`/shop/${gem._id}`)}
+              >
                 {gem.image ? (
                   <img
                     src={`data:${gem.image.contentType};base64,${gem.image.data}`}
@@ -253,15 +309,15 @@ const Shop = () => {
               </div>
               
               <div className="p-4">
-                <h2 className="text-xl font-semibold text-black-800">{gem.name}</h2>
+                <h2 
+                  className="text-xl font-semibold text-black-800 cursor-pointer hover:text-blue-600"
+                  onClick={() => navigate(`/shop/${gem._id}`)}
+                >
+                  {gem.name}
+                </h2>
                 <div className="mt-2 flex justify-between items-center text-blue-600">
                   <span className="text-lg font-bold">${gem.price}</span>
-                  <button
-                    onClick={() => addToCart(gem)}
-                    className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-                  >
-                    Add to Cart
-                  </button>
+                  <QuantitySelector onAddToCart={handleAddToCart} gem={gem} />
                 </div>
               </div>
             </div>
@@ -271,25 +327,5 @@ const Shop = () => {
     </div>
   );
 };
-
-// Add animation keyframes in your CSS
-const style = document.createElement('style');
-style.textContent = `
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translate3d(0, -20px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-.animate-fade-in-down {
-  animation: fadeInDown 0.3s ease-out forwards;
-}
-`;
-document.head.appendChild(style);
 
 export default Shop;

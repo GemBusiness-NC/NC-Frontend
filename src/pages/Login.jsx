@@ -1,6 +1,6 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { assets } from '../assets/assets';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import { AppContent } from '../context/AppContext';
@@ -10,6 +10,7 @@ import Navbar from '../components/Navbar';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { backendUrl, setIsLoggedin, getUserData } = useContext(AppContent);
 
   const [state, setState] = useState('Login');
@@ -45,16 +46,28 @@ const Login = () => {
         const { data } = await axios.post(backendUrl + `/api/auth/login`, { email, password });
   
         if (data.success) {
+          // Store the token in localStorage
+          localStorage.setItem('token', data.token);
+          
+          // Store user role if admin
+          if (data.user && data.user.isAdmin) {
+            localStorage.setItem('userRole', 'admin');
+          } else {
+            localStorage.setItem('userRole', 'user');
+          }
+          
+          // Update login state
           setIsLoggedin(true);
           getUserData();
-          toast.success('Login successful!');
-        
-          // Store the token in localStorage
-          localStorage.setItem('token', data.token);  // Save token in localStorage
-        
-          // Navigate based on the redirectTo value from the backend
-          const redirectTo = data.redirectTo || '/';  // Default to '/' if no redirectTo is provided
-          navigate(redirectTo);  // Navigate to either '/admin' or '/'
+          
+          // Handle redirect with a small delay to ensure state updates
+          const redirectPath = data.redirectTo || '/';
+          console.log("Will navigate to:", redirectPath);
+          
+          // Use setTimeout to ensure state updates and toast is shown
+          setTimeout(() => {
+            navigate(redirectPath, { replace: true });
+          }, 800);
         } else {
           toast.error(data.message);
         }
